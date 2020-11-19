@@ -6,11 +6,9 @@ using UnityEngine;
 
 public class FPSController : MonoBehaviour
 {
-    private PlayerStats m_PS;
+
     private Camera playerCamera;
     public float walkingSpeed = 7.5f;
-    public float runningSpeed = 11.5f;
-    public float jumpSpeed = 8.0f;
     public float gravity = 20.0f;
     public float lookSpeed = 2.0f;
     public float lookXLimit = 45.0f;
@@ -21,12 +19,13 @@ public class FPSController : MonoBehaviour
     Vector3 moveDirection = Vector3.zero;
     float rotationX = 0;
 
+    private bool isCrouching;
     [HideInInspector]
     public bool canMove = true;
 
     void Start()
     {
-        m_PS = GetComponent<PlayerStats>();
+    
         characterController = GetComponent<CharacterController>();
         playerCamera = Camera.main;
         // Lock cursor
@@ -36,27 +35,33 @@ public class FPSController : MonoBehaviour
 
     void Update()
     {
-        Mathf.Clamp(m_PS.m_Stamina, 0, 100);
 
+        isCrouching = Input.GetKey(KeyCode.LeftControl);
         // We are grounded, so recalculate move direction based on axes
         Vector3 forward = transform.TransformDirection(Vector3.forward);
         Vector3 right = transform.TransformDirection(Vector3.right);
         // Press Left Shift to run
-        bool isRunning = Input.GetKey(KeyCode.LeftShift);
-        float curSpeedX = canMove ? (isRunning ? runningSpeed : walkingSpeed) * Input.GetAxis("Vertical") : 0;
-        float curSpeedY = canMove ? (isRunning ? runningSpeed : walkingSpeed) * Input.GetAxis("Horizontal") : 0;
+ 
+        float curSpeedX = canMove ?  walkingSpeed * Input.GetAxis("Vertical") : 0;
+        float curSpeedY = canMove ?  walkingSpeed * Input.GetAxis("Horizontal") : 0;
         float movementDirectionY = moveDirection.y;
 
-        moveDirection = (forward * curSpeedX) + (right * curSpeedY);
-
-        if (Input.GetButton("Jump") && canMove && characterController.isGrounded)
+        if (!isCrouching)
         {
-            moveDirection.y = jumpSpeed;
+            moveDirection = (forward * curSpeedX) + (right * curSpeedY);
+            transform.localScale = new Vector3(1, 1f, 1);
+            
         }
         else
         {
-            moveDirection.y = movementDirectionY;
+            moveDirection = (forward * (curSpeedX / 2) ) + (right * (curSpeedY / 2));
+
+            transform.localScale = new Vector3(1,0.5f,1);
+            
         }
+       
+
+       
 
         // Apply gravity
         
@@ -65,8 +70,11 @@ public class FPSController : MonoBehaviour
             moveDirection.y -= gravity * Time.deltaTime;
         }
 
-        // Move the controller
-        characterController.Move(moveDirection * Time.deltaTime);
+        
+            characterController.Move(moveDirection * Time.deltaTime);
+        
+      
+      
 
         // Player and Camera rotation
         if (canMove)
