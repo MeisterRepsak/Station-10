@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class FPSController : MonoBehaviour
 {
-
+   
     private Camera playerCamera;
     public float walkingSpeed = 7.5f;
     public float gravity = 20.0f;
@@ -19,9 +19,11 @@ public class FPSController : MonoBehaviour
     Vector3 moveDirection = Vector3.zero;
     float rotationX = 0;
 
-    private bool isCrouching;
+    [HideInInspector] public bool isCrouching;
     [HideInInspector]
     public bool canMove = true;
+
+    public LayerMask m_EnemyMask;
 
     void Start()
     {
@@ -35,47 +37,26 @@ public class FPSController : MonoBehaviour
 
     void Update()
     {
+        Movement();
+        CameraRotation();
+        PlaySound();
+    }
 
-        isCrouching = Input.GetKey(KeyCode.LeftControl);
-        // We are grounded, so recalculate move direction based on axes
-        Vector3 forward = transform.TransformDirection(Vector3.forward);
-        Vector3 right = transform.TransformDirection(Vector3.right);
-        // Press Left Shift to run
- 
-        float curSpeedX = canMove ?  walkingSpeed * Input.GetAxis("Vertical") : 0;
-        float curSpeedY = canMove ?  walkingSpeed * Input.GetAxis("Horizontal") : 0;
-        float movementDirectionY = moveDirection.y;
-
-        if (!isCrouching)
+    private void PlaySound()
+    {
+        if(Physics.CheckSphere(transform.position, 10f, m_EnemyMask) && Input.GetKeyDown(KeyCode.Space))
         {
-            moveDirection = (forward * curSpeedX) + (right * curSpeedY);
-            transform.localScale = new Vector3(1, 1f, 1);
-            
+            GameObject.Find("Enemy").GetComponent<EnemyAi>().PlayerPos = transform.position;
+            GameObject.Find("Enemy").GetComponent<EnemyAi>().m_SoundPlayed = true;
         }
-        else
+        else if(Input.GetKeyUp(KeyCode.Space))
         {
-            moveDirection = (forward * (curSpeedX / 2) ) + (right * (curSpeedY / 2));
-
-            transform.localScale = new Vector3(1,0.5f,1);
-            
+            GameObject.Find("Enemy").GetComponent<EnemyAi>().m_SoundPlayed = false;
         }
-       
+    }
 
-       
-
-        // Apply gravity
-        
-        if (!characterController.isGrounded)
-        {
-            moveDirection.y -= gravity * Time.deltaTime;
-        }
-
-        
-            characterController.Move(moveDirection * Time.deltaTime);
-        
-      
-      
-
+    private void CameraRotation()
+    {
         // Player and Camera rotation
         if (canMove)
         {
@@ -84,6 +65,46 @@ public class FPSController : MonoBehaviour
             playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
             transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeed, 0);
         }
+    }
+
+    private void Movement()
+    {
+        isCrouching = Input.GetKey(KeyCode.LeftControl);
+        // We are grounded, so recalculate move direction based on axes
+        Vector3 forward = transform.TransformDirection(Vector3.forward);
+        Vector3 right = transform.TransformDirection(Vector3.right);
+        // Press Left Shift to run
+
+        float curSpeedX = canMove ? walkingSpeed * Input.GetAxis("Vertical") : 0;
+        float curSpeedY = canMove ? walkingSpeed * Input.GetAxis("Horizontal") : 0;
+        float movementDirectionY = moveDirection.y;
+
+        if (!isCrouching)
+        {
+            moveDirection = (forward * curSpeedX) + (right * curSpeedY);
+            transform.localScale = new Vector3(1, 1f, 1);
+
+        }
+        else
+        {
+            moveDirection = (forward * (curSpeedX / 2)) + (right * (curSpeedY / 2));
+
+            transform.localScale = new Vector3(1, 0.5f, 1);
+
+        }
+
+
+
+
+        // Apply gravity
+
+        if (!characterController.isGrounded)
+        {
+            moveDirection.y -= gravity * Time.deltaTime;
+        }
+
+
+        characterController.Move(moveDirection * Time.deltaTime);
     }
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
