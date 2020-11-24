@@ -27,7 +27,7 @@ public class EnemyAi : MonoBehaviour
     {
         m_Player = GameObject.Find("Player").GetComponent<FPSController>();
         m_ConstRadius = m_viewRadius;
-       m_Nav = GetComponent<NavMeshAgent>();
+        m_Nav = GetComponent<NavMeshAgent>();
         m_BeenSeen = false;
     }
 
